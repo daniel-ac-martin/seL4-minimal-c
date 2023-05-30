@@ -11,14 +11,18 @@ arch_family_x86 = x86
 word_size_x86_64 = 64
 word_size_x86 = 32
 
-CFLAGS_x86_64 ?= -m64 -march=nehalem
+CFLAGS_x86_64 ?= -m64 -D__KERNEL_64__ -march=nehalem
 qemu_flags_x86_64 ?= -machine pcspk-audiodev=snd0 -cpu Nehalem,-vme,+pdpe1gb,-xsave,-xsaveopt,-xsavec,-fsgsbase,-invpcid,+syscall,+lm,enforce -serial mon:stdio -m size=512M -audiodev pa,id=snd0
 
 arch_family = $(arch_family_$(arch))
 word_size = $(word_size_$(arch))
 
-CFLAGS ?= -g -ffreestanding -Wall -Wextra -fno-exceptions -std=gnu11 $(CFLAGS_$(CFLAGS_x86_64))
-LDFLAGS ?= 
+#CFLAGS ?= -g -std=gnu11 -nostdinc -fno-pic -fno-pie -fno-stack-protector -fno-asynchronous-unwind-tables -ftls-model=local-exec -mtls-direct-seg-refs $(CFLAGS_$(CFLAGS_x86_64))
+CFLAGS ?= -g -std=gnu11 $(CFLAGS_$(CFLAGS_x86_64))
+
+#LDFLAGS ?= -m elf_x86_64 -static -nostdlib -z max-page-size=0x1000 -u_sel4_start -e_sel4_start
+LDFLAGS ?= -u_sel4_start -e_sel4_start
+CLINK_FLAGS ?= -Wl,-u_sel4_start -Wl,-e_sel4_start
 
 qemu ?= qemu-system-$(arch)
 qemu_flags ?= $(qemu_flags_$(arch))
@@ -87,7 +91,8 @@ build/$(arch)-$(plat)/seL4/sel4runtime/libsel4runtime.a: build/$(arch)-$(plat)/s
 
 build/$(arch)-$(plat)/src/roottask.elf: build/$(arch)-$(plat)/seL4/sel4runtime/libsel4runtime.a build/$(arch)-$(plat)/seL4/libsel4/libsel4.a build/$(arch)-$(plat)/libc/libc.a $(OBJ)
 	mkdir -p $(@D)
-	$(LD) $(LDFLAGS) -o $(@) $(^)
+	#$(LD) $(LDFLAGS) -T deps/seL4/seL4_tools/cmake-tool/helpers/tls_rootserver.lds -o $(@) $(^)
+	$(CC) $(CFLAGS) $(CLINK_FLAGS) -Wl,-T deps/seL4/seL4_tools/cmake-tool/helpers/tls_rootserver.lds -o $(@) $(^)
 
 build/$(arch)-$(plat)/libc/libc.a: $(LIBC_OBJ)
 	mkdir -p $(@D)
