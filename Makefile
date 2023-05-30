@@ -1,6 +1,7 @@
 AS ?= nasm
 CC ?= gcc
 LD ?= ld
+AR ?= ar
 
 arch ?= x86_64
 plat ?= pc99
@@ -28,17 +29,20 @@ INCLUDE = deps/seL4/seL4/libsel4/arch_include/$(arch_family)/ \
 	  deps/seL4/seL4/libsel4/mode_include/$(word_size)/ \
 	  deps/seL4/seL4/libsel4/sel4_arch_include/$(arch)/ \
 	  deps/seL4/seL4/libsel4/sel4_plat_include/$(plat)/ \
-	  build/$(arch)-$(plat)/deps/seL4/seL4/gen_config/ \
-	  build/$(arch)-$(plat)/deps/seL4/seL4/libsel4/arch_include/$(arch_family)/ \
-	  build/$(arch)-$(plat)/deps/seL4/seL4/libsel4/autoconf/ \
-	  build/$(arch)-$(plat)/deps/seL4/seL4/libsel4/gen_config/ \
-	  build/$(arch)-$(plat)/deps/seL4/seL4/libsel4/include/ \
-	  build/$(arch)-$(plat)/deps/seL4/seL4/libsel4/sel4_arch_include/$(arch)/
+	  build/$(arch)-$(plat)/seL4/kernel/gen_config/ \
+	  build/$(arch)-$(plat)/seL4/libsel4/arch_include/$(arch_family)/ \
+	  build/$(arch)-$(plat)/seL4/libsel4/autoconf/ \
+	  build/$(arch)-$(plat)/seL4/libsel4/gen_config/ \
+	  build/$(arch)-$(plat)/seL4/libsel4/include/ \
+	  build/$(arch)-$(plat)/seL4/libsel4/sel4_arch_include/$(arch)/
 
 ASM_SRC = $(shell find src -name '*.asm')
 SOURCES = $(shell find src -name '*.c')
 HEADERS = $(shell find src -name '*.h')
 OBJ = ${SOURCES:%.c=build/$(arch)-$(plat)/%.o} ${ASM_SRC:%.asm=build/$(arch)-$(plat)/%.o}
+
+LIBC_SOURCES = $(shell find seL4/libc -name '*.c')
+LIBC_OBJ = ${LIBC_SOURCES:seL4/%.c=build/$(arch)-$(plat)/%.o}
 
 .PHONY: all clean initrd kernel run
 
@@ -54,7 +58,7 @@ run: build/$(arch)-$(plat)/kernel.img build/$(arch)-$(plat)/initrd.img
 	#$(qemu) $(qemu_flags) -kernel $(<) -initrd ../seL4-os/build/os
 	$(qemu) $(qemu_flags) -kernel $(<) -initrd build/$(arch)-$(plat)/initrd.img
 
-build/$(arch)-$(plat)/kernel.img: build/$(arch)-$(plat)/deps/seL4/seL4/kernel.elf
+build/$(arch)-$(plat)/kernel.img: build/$(arch)-$(plat)/seL4/kernel/kernel.elf
 	mkdir -p $(@D)
 	objcopy -O elf32-i386 $(<) $(@)
 
@@ -62,34 +66,35 @@ build/$(arch)-$(plat)/initrd.img: build/$(arch)-$(plat)/src/roottask.elf
 	mkdir -p $(@D)
 	cp $(<) $(@)
 
-build/$(arch)-$(plat)/deps/seL4/seL4/build.ninja: deps/seL4/seL4/CMakeLists.txt
-	mkdir -p $(@D)
-	cd $(@D) && cmake \
-		-DCROSS_COMPILER_PREFIX= \
-		-DCMAKE_TOOLCHAIN_FILE=../../../../../$(<D)/gcc.cmake \
-		-G Ninja \
-		-C ../../../../../seL4/seL4/$(arch)-$(plat).cmake \
-		../../../../../$(<D)
-
-build/$(arch)-$(plat)/deps/seL4/seL4runtime/build.ninja: deps/seL4/seL4runtime/CMakeLists.txt
+build/$(arch)-$(plat)/seL4/build.ninja: seL4/$(arch)-$(plat)/CMakeLists.txt
 	mkdir -p $(@D)
 	cd $(@D) && cmake \
 		-G Ninja \
-		-C ../../../../../seL4/seL4runtime/$(arch)-$(plat).cmake \
-		../../../../../$(<D)
+		../../../$(<D)
 
-build/$(arch)-$(plat)/deps/seL4/seL4/kernel.elf: build/$(arch)-$(plat)/deps/seL4/seL4/build.ninja
+build/$(arch)-$(plat)/seL4/kernel/kernel.elf: build/$(arch)-$(plat)/seL4/build.ninja
 	mkdir -p $(@D)
-	#cd $(@D) && ninja kernel.elf # This doesn't give us all of the include files
-	cd $(@D) && ninja
+	cd $(@D)/.. && ninja kernel.elf
 
-build/$(arch)-$(plat)/deps/seL4/seL4runtime/libsel4runtime.a: build/$(arch)-$(plat)/deps/seL4/seL4runtime/build.ninja
+build/$(arch)-$(plat)/seL4/libsel4/libsel4.a: build/$(arch)-$(plat)/seL4/build.ninja
 	mkdir -p $(@D)
-	cd $(@D) && ninja
+	cd $(@D)/.. && ninja libsel4.a
 
-build/$(arch)-$(plat)/src/roottask.elf: $(OBJ) build/$(arch)-$(plat)/deps/seL4/seL4runtime/libsel4runtime.a
+build/$(arch)-$(plat)/seL4/sel4runtime/libsel4runtime.a: build/$(arch)-$(plat)/seL4/build.ninja
+	mkdir -p $(@D)
+	cd $(@D)/.. && ninja libsel4runtime.a
+
+build/$(arch)-$(plat)/src/roottask.elf: build/$(arch)-$(plat)/seL4/sel4runtime/libsel4runtime.a build/$(arch)-$(plat)/seL4/libsel4/libsel4.a build/$(arch)-$(plat)/libc/libc.a $(OBJ)
 	mkdir -p $(@D)
 	$(LD) $(LDFLAGS) -o $(@) $(^)
+
+build/$(arch)-$(plat)/libc/libc.a: $(LIBC_OBJ)
+	mkdir -p $(@D)
+	$(AR) -cr $(@) $(^)
+
+build/$(arch)-$(plat)/libc/%.o: seL4/libc/%.c
+	mkdir -p $(@D)
+	$(CC) $(CFLAGS) -c $(<) -o $(@)
 
 build/$(arch)-$(plat)/src/%.o: src/%.c $(HEADERS) $(INCLUDE)
 	mkdir -p $(@D)

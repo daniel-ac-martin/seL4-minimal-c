@@ -4,3 +4,6 @@
 [submodule "deps/seL4/seL4runtime"]
 	path = deps/seL4/seL4runtime
 	url = https://github.com/seL4/seL4runtime.git
+[submodule "deps/seL4/seL4_tools"]
+	path = deps/seL4/seL4_tools
+	url = https://github.com/seL4/seL4_tools.git

@@ -1,13 +1,10 @@
 #!/usr/bin/env -S cmake -P
+cmake_minimum_required(VERSION 3.7.2)
+project(seL4-os C ASM)
 
-# Build kernel.elf
-include(${CMAKE_CURRENT_LIST_DIR}/../../deps/seL4/seL4/tools/helpers.cmake)
-cmake_script_build_kernel()
-
-include(${CMAKE_CURRENT_LIST_DIR}/../x86_64-pc99.cmake)
-
-#set(KernelPlatform "pc99" CACHE STRING "") # Provided by include
-#set(KernelSel4Arch "x86_64" CACHE STRING "") # Provided by include
+#set(KernelArch "x86" CACHE STRING "") # Needed?
+set(KernelPlatform "pc99" CACHE STRING "")
+set(KernelSel4Arch "x86_64" CACHE STRING "")
 #set(KernelVerificationBuild ON CACHE BOOL "")
 set(KernelVerificationBuild OFF CACHE BOOL "")
 set(KernelMaxNumNodes "1" CACHE STRING "")
@@ -35,6 +32,4 @@ set(KernelFSGSBase msr CACHE STRING "" FORCE)
 set(KernelIOMMU OFF CACHE BOOL "" FORCE)
 set(KernelFPU FXSAVE CACHE STRING "" FORCE)
 
-# Debugging
-set(KernelDebugBuild ON CACHE BOOL "" FORCE)
-set(LibSel4PlatSupportUseDebugPutChar true CACHE BOOL "" FORCE) # Relevant?!
+include("${CMAKE_CURRENT_LIST_DIR}/../common.cmake")
