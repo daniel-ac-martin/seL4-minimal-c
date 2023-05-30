@@ -1,7 +1,3 @@
-#!/usr/bin/env -S cmake -P
-cmake_minimum_required(VERSION 3.7.2)
-project(seL4-os C ASM)
-
 #set(KernelArch "x86" CACHE STRING "") # Needed?
 set(KernelPlatform "pc99" CACHE STRING "")
 set(KernelSel4Arch "x86_64" CACHE STRING "")
@@ -32,4 +28,4 @@ set(KernelFSGSBase msr CACHE STRING "" FORCE)
 set(KernelIOMMU OFF CACHE BOOL "" FORCE)
 set(KernelFPU FXSAVE CACHE STRING "" FORCE)
 
-include("${CMAKE_CURRENT_LIST_DIR}/../common.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/common.cmake")

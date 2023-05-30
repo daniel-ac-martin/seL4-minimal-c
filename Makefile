@@ -66,9 +66,10 @@ build/$(arch)-$(plat)/initrd.img: build/$(arch)-$(plat)/src/roottask.elf
 	mkdir -p $(@D)
 	cp $(<) $(@)
 
-build/$(arch)-$(plat)/seL4/build.ninja: seL4/$(arch)-$(plat)/CMakeLists.txt
+build/$(arch)-$(plat)/seL4/build.ninja: seL4/$(arch)-$(plat).cmake seL4/CMakeLists.txt
 	mkdir -p $(@D)
 	cd $(@D) && cmake \
+		-C ../../../$(<) \
 		-G Ninja \
 		../../../$(<D)
 
