@@ -1,3 +1,6 @@
 [submodule "deps/seL4/seL4"]
 	path = deps/seL4/seL4
 	url = https://github.com/seL4/seL4.git
+[submodule "deps/seL4/seL4runtime"]
+	path = deps/seL4/seL4runtime
+	url = https://github.com/seL4/seL4runtime.git

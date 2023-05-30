@@ -68,7 +68,14 @@ build/$(arch)-$(plat)/deps/seL4/seL4/build.ninja: deps/seL4/seL4/CMakeLists.txt
 		-DCROSS_COMPILER_PREFIX= \
 		-DCMAKE_TOOLCHAIN_FILE=../../../../../$(<D)/gcc.cmake \
 		-G Ninja \
-		-C ../../../../../seL4/$(arch)-$(plat).cmake \
+		-C ../../../../../seL4/seL4/$(arch)-$(plat).cmake \
+		../../../../../$(<D)
+
+build/$(arch)-$(plat)/deps/seL4/seL4runtime/build.ninja: deps/seL4/seL4runtime/CMakeLists.txt
+	mkdir -p $(@D)
+	cd $(@D) && cmake \
+		-G Ninja \
+		-C ../../../../../seL4/seL4runtime/$(arch)-$(plat).cmake \
 		../../../../../$(<D)
 
 build/$(arch)-$(plat)/deps/seL4/seL4/kernel.elf: build/$(arch)-$(plat)/deps/seL4/seL4/build.ninja
@@ -76,7 +83,11 @@ build/$(arch)-$(plat)/deps/seL4/seL4/kernel.elf: build/$(arch)-$(plat)/deps/seL4
 	#cd $(@D) && ninja kernel.elf # This doesn't give us all of the include files
 	cd $(@D) && ninja
 
-build/$(arch)-$(plat)/src/roottask.elf: $(OBJ)
+build/$(arch)-$(plat)/deps/seL4/seL4runtime/libsel4runtime.a: build/$(arch)-$(plat)/deps/seL4/seL4runtime/build.ninja
+	mkdir -p $(@D)
+	cd $(@D) && ninja
+
+build/$(arch)-$(plat)/src/roottask.elf: $(OBJ) build/$(arch)-$(plat)/deps/seL4/seL4runtime/libsel4runtime.a
 	mkdir -p $(@D)
 	$(LD) $(LDFLAGS) -o $(@) $(^)
 
