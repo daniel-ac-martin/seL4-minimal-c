@@ -1,6 +1,4 @@
-AS ?= nasm
 CC ?= gcc
-LD ?= ld
 AR ?= ar
 
 arch ?= x86_64
@@ -11,22 +9,17 @@ arch_family_x86 = x86
 word_size_x86_64 = 64
 word_size_x86 = 32
 
-CFLAGS_x86_64 ?= -m64 -D__KERNEL_64__ -march=nehalem
-qemu_flags_x86_64 ?= -machine pcspk-audiodev=snd0 -cpu Nehalem,-vme,+pdpe1gb,-xsave,-xsaveopt,-xsavec,-fsgsbase,-invpcid,+syscall,+lm,enforce -serial mon:stdio -m size=512M -audiodev pa,id=snd0
+CFLAGS_x86_64 = -m64 -D__KERNEL_64__ -march=nehalem
+qemu_flags_x86_64 = -machine pcspk-audiodev=snd0 -cpu Nehalem,-vme,+pdpe1gb,-xsave,-xsaveopt,-xsavec,-fsgsbase,-invpcid,+syscall,+lm,enforce -serial mon:stdio -m size=512M -audiodev pa,id=snd0
 
 arch_family = $(arch_family_$(arch))
 word_size = $(word_size_$(arch))
 
-#CFLAGS ?= -g -std=gnu11 -nostdinc -fno-pic -fno-pie -fno-stack-protector -fno-asynchronous-unwind-tables -ftls-model=local-exec -mtls-direct-seg-refs $(CFLAGS_$(CFLAGS_x86_64))
-CFLAGS ?= -g -std=gnu11 $(CFLAGS_$(CFLAGS_x86_64))
-
-#LDFLAGS ?= -m elf_x86_64 -static -nostdlib -z max-page-size=0x1000 -u_sel4_start -e_sel4_start
-LDFLAGS ?= -u_sel4_start -e_sel4_start
-CLINK_FLAGS ?= -Wl,-u_sel4_start -Wl,-e_sel4_start
+CFLAGS ?= -g -ffreestanding -Wall -Wextra -fno-exceptions -std=gnu11 $(CFLAGS_$(arch))
+CLINK_FLAGS ?= -Wl,-m,elf_x86_64 -Wl,-nostdlib -static -Wl,-z,max-page-size=0x1000 -Wl,-u_sel4_start -Wl,-e_sel4_start -Wl,--require-defined,main
 
 qemu ?= qemu-system-$(arch)
 qemu_flags ?= $(qemu_flags_$(arch))
-#qemu_flags ?= -machine pcspk-audiodev=snd0,accel=kvm -cpu host -serial mon:stdio -m size=512M -audiodev pa,id=snd0
 
 INCLUDE = deps/seL4/seL4/libsel4/arch_include/$(arch_family)/ \
 	  deps/seL4/seL4/libsel4/include/ \
@@ -40,10 +33,9 @@ INCLUDE = deps/seL4/seL4/libsel4/arch_include/$(arch_family)/ \
 	  build/$(arch)-$(plat)/seL4/libsel4/include/ \
 	  build/$(arch)-$(plat)/seL4/libsel4/sel4_arch_include/$(arch)/
 
-ASM_SRC = $(shell find src -name '*.asm')
 SOURCES = $(shell find src -name '*.c')
 HEADERS = $(shell find src -name '*.h')
-OBJ = ${SOURCES:%.c=build/$(arch)-$(plat)/%.o} ${ASM_SRC:%.asm=build/$(arch)-$(plat)/%.o}
+OBJ = ${SOURCES:%.c=build/$(arch)-$(plat)/%.o}
 
 LIBC_SOURCES = $(shell find seL4/libc -name '*.c')
 LIBC_OBJ = ${LIBC_SOURCES:seL4/%.c=build/$(arch)-$(plat)/%.o}
@@ -59,7 +51,6 @@ initrd: build/$(arch)-$(plat)/initrd.img
 kernel: build/$(arch)-$(plat)/kernel.img
 
 run: build/$(arch)-$(plat)/kernel.img build/$(arch)-$(plat)/initrd.img
-	#$(qemu) $(qemu_flags) -kernel $(<) -initrd ../seL4-os/build/os
 	$(qemu) $(qemu_flags) -kernel $(<) -initrd build/$(arch)-$(plat)/initrd.img
 
 build/$(arch)-$(plat)/kernel.img: build/$(arch)-$(plat)/seL4/kernel/kernel.elf
@@ -91,8 +82,7 @@ build/$(arch)-$(plat)/seL4/sel4runtime/libsel4runtime.a: build/$(arch)-$(plat)/s
 
 build/$(arch)-$(plat)/src/roottask.elf: build/$(arch)-$(plat)/seL4/sel4runtime/libsel4runtime.a build/$(arch)-$(plat)/seL4/libsel4/libsel4.a build/$(arch)-$(plat)/libc/libc.a $(OBJ)
 	mkdir -p $(@D)
-	#$(LD) $(LDFLAGS) -T deps/seL4/seL4_tools/cmake-tool/helpers/tls_rootserver.lds -o $(@) $(^)
-	$(CC) $(CFLAGS) $(CLINK_FLAGS) -Wl,-T deps/seL4/seL4_tools/cmake-tool/helpers/tls_rootserver.lds -o $(@) $(^)
+	$(CC) -v $(CLINK_FLAGS) -Wl,-T deps/seL4/seL4_tools/cmake-tool/helpers/tls_rootserver.lds -o $(@) $(^)
 
 build/$(arch)-$(plat)/libc/libc.a: $(LIBC_OBJ)
 	mkdir -p $(@D)
@@ -105,8 +95,3 @@ build/$(arch)-$(plat)/libc/%.o: seL4/libc/%.c
 build/$(arch)-$(plat)/src/%.o: src/%.c $(HEADERS) $(INCLUDE)
 	mkdir -p $(@D)
 	$(CC) $(CFLAGS) $(INCLUDE:%=-I %) -c $(<) -o $(@)
-
-build/$(arch)-$(plat)/src/%.o: src/%.asm
-	mkdir -p $(@D)
-	$(ASM) $(<) -f elf64 -o $(@)
-
