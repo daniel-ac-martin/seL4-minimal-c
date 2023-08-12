@@ -16,5 +16,5 @@ int main(int argc, char *argv[]) {
 	seL4_DebugPutChar('!');
 	seL4_DebugPutChar('\n');
 
-  seL4_TCB_Suspend(seL4_CapInitThreadTCB);
+	seL4_TCB_Suspend(seL4_CapInitThreadTCB);
 }
