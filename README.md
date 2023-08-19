@@ -99,7 +99,6 @@ Miscellaneous notes
   - https://github.com/daniel-ac-martin/seL4-minimal-asm
   - https://github.com/daniel-ac-martin/seL4-minimal-zig
 - This currently only does an x86_64 build
-- We are not providing a C library, although it should be easy to add: https://github.com/seL4/musllibc/
 - This has been tested on a GNU/Linux system (Fedora 38)
 - Thoughts / comments / ideas are welcome in the [issues]
 
