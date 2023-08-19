@@ -25,6 +25,7 @@ list(
         ${deps_dir}/seL4/seL4
         ${deps_dir}/seL4/seL4_tools/cmake-tool/helpers
         ${deps_dir}/seL4/seL4runtime
+        ${deps_dir}/seL4/musllibc
 )
 
 include(application_settings)
@@ -43,18 +44,18 @@ ApplyCommonReleaseVerificationSettings(FALSE FALSE)
 #endif()
 
 find_package(seL4 REQUIRED)
-find_package(sel4runtime REQUIRED)
+#find_package(sel4runtime REQUIRED)
 #find_package(elfloader-tool REQUIRED)
-#find_package(musllibc REQUIRED)
+find_package(musllibc REQUIRED)
 #find_package(util_libs REQUIRED)
 #find_package(seL4_libs REQUIRED)
 
 sel4_import_kernel()
-sel4runtime_import_project()
+#sel4runtime_import_project()
 #elfloader_import_project()
 
 # This sets up environment build flags and imports musllibc and runtime libraries.
-#musllibc_setup_build_environment_with_sel4runtime()
+musllibc_setup_build_environment_with_sel4runtime()
 sel4_import_libsel4()
 #util_libs_import_libraries()
 #sel4_libs_import_libraries()

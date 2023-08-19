@@ -37,9 +37,6 @@ SOURCES = $(shell find src -name '*.c')
 HEADERS = $(shell find src -name '*.h')
 OBJ = ${SOURCES:%.c=build/$(arch)-$(plat)/%.o}
 
-LIBC_SOURCES = $(shell find seL4/libc -name '*.c')
-LIBC_OBJ = ${LIBC_SOURCES:seL4/%.c=build/$(arch)-$(plat)/%.o}
-
 .PHONY: all clean initrd kernel run
 
 all: kernel initrd
@@ -80,17 +77,14 @@ build/$(arch)-$(plat)/seL4/sel4runtime/libsel4runtime.a: build/$(arch)-$(plat)/s
 	mkdir -p $(@D)
 	cd $(@D)/.. && ninja libsel4runtime.a
 
-build/$(arch)-$(plat)/src/roottask.elf: build/$(arch)-$(plat)/seL4/sel4runtime/libsel4runtime.a build/$(arch)-$(plat)/seL4/libsel4/libsel4.a build/$(arch)-$(plat)/libc/libc.a $(OBJ)
+build/$(arch)-$(plat)/seL4/musllibc/build-temp/lib/libc.a: build/$(arch)-$(plat)/seL4/build.ninja
 	mkdir -p $(@D)
-	$(CC) -v $(CLINK_FLAGS) -Wl,-T deps/seL4/seL4_tools/cmake-tool/helpers/tls_rootserver.lds -o $(@) $(^)
+	cd $(@D)/../../.. && ninja musllibc/muslc_gen
 
-build/$(arch)-$(plat)/libc/libc.a: $(LIBC_OBJ)
+build/$(arch)-$(plat)/src/roottask.elf: build/$(arch)-$(plat)/seL4/sel4runtime/libsel4runtime.a build/$(arch)-$(plat)/seL4/libsel4/libsel4.a build/$(arch)-$(plat)/seL4/musllibc/build-temp/lib/libc.a $(OBJ)
 	mkdir -p $(@D)
-	$(AR) -cr $(@) $(^)
-
-build/$(arch)-$(plat)/libc/%.o: seL4/libc/%.c
-	mkdir -p $(@D)
-	$(CC) $(CFLAGS) -c $(<) -o $(@)
+	#$(CC) $(CFLAGS) -v $(CLINK_FLAGS) -Wl,-T deps/seL4/seL4_tools/cmake-tool/helpers/tls_rootserver.lds -o $(@) $(^)
+	$(CC) $(CFLAGS) -v $(CLINK_FLAGS) -Wl,-T deps/seL4/seL4_tools/cmake-tool/helpers/tls_rootserver.lds /home/dacm/Projects/seL4-os/build/lib/crt0.o /home/dacm/Projects/seL4-os/build/lib/crti.o /usr/lib/gcc/x86_64-redhat-linux/13/crtbegin.o $(OBJ) -Wl,--start-group -lgcc -lgcc_eh build/$(arch)-$(plat)/seL4/sel4runtime/libsel4runtime.a build/$(arch)-$(plat)/seL4/libsel4/libsel4.a build/$(arch)-$(plat)/seL4/musllibc/build-temp/lib/libc.a -Wl,--end-group /usr/lib/gcc/x86_64-redhat-linux/13/crtend.o /home/dacm/Projects/seL4-os/build/lib/crtn.o -o $(@)
 
 build/$(arch)-$(plat)/src/%.o: src/%.c $(HEADERS) $(INCLUDE)
 	mkdir -p $(@D)
