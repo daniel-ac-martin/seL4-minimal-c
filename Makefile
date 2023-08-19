@@ -15,7 +15,8 @@ qemu_flags_x86_64 = -machine pcspk-audiodev=snd0 -cpu Nehalem,-vme,+pdpe1gb,-xsa
 arch_family = $(arch_family_$(arch))
 word_size = $(word_size_$(arch))
 
-CFLAGS ?= -g -ffreestanding -Wall -Wextra -fno-exceptions -std=gnu11 $(CFLAGS_$(arch))
+#CFLAGS ?= -g -ffreestanding -Wall -Wextra -fno-exceptions -std=gnu11 $(CFLAGS_$(arch))
+CFLAGS ?= -g -std=gnu11 -nostdinc -fno-pic -fno-pie -fno-stack-protector -fno-asynchronous-unwind-tables -ftls-model=local-exec -mtls-direct-seg-refs $(CFLAGS_$(arch))
 CLINK_FLAGS ?= -Wl,-m,elf_x86_64 -static -nostdlib -Wl,-z,max-page-size=0x1000 -Wl,-u_sel4_start -Wl,-e_sel4_start -Wl,--require-defined,main
 
 qemu ?= qemu-system-$(arch)
