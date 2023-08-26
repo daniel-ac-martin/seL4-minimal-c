@@ -21,7 +21,6 @@ CLINK_FLAGS ?= -Wl,-m,elf_x86_64 -static -nostdlib -Wl,-z,max-page-size=0x1000 -
 qemu ?= qemu-system-$(arch)
 qemu_flags ?= $(qemu_flags_$(arch))
 
-	  
 INCLUDE = deps/seL4/musllibc/include/ \
 	  deps/seL4/seL4/libsel4/arch_include/$(arch_family)/ \
 	  deps/seL4/seL4/libsel4/include/ \
